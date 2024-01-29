@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.GENERAL_THEME" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+    <!-- Primary Brand Color-->
+    <item name="colorPrimary" type="color">@color/purple_500</item>
+    <item name="colorPrimaryVariant" type="color">@color/purple_700</item>
+    <item name="colorOnPrimary" type="color">@color/white</item>
+
+    <!-- Secondary Brand Color-->
+    <item name="colorSecondary" type="color">@color/teal_200</item>
+    <item name="colorSecondaryVariant" type="color">@color/teal_700</item>
+    <item name="colorOnSecondary" type="color">@color/black</item>
+
+
+    <!-- Status Bar Color-->
+    <item name="statusBarColor" tools:targetApi="l" type="color">?attr/colorPrimaryVariant</item>
+
+
+    <!-- Customize Theme Here -->
+    <item name="textColor" type="color">@color/colorText</item>
+</resources>

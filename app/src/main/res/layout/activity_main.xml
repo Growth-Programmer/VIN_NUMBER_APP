@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/ScanVIN"
+        android:layout_width="180dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="492dp"
+        android:layout_marginEnd="116dp"
+        android:text="@string/scan_vin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:layout_width="321dp"
+        android:layout_height="361dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="50dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/ScanVIN"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/Barcode_Type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="VIN #" />
+
+        <TextView
+            android:id="@+id/VIN_OUTPUT"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="N/A" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/record_button"
+        android:layout_width="180dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="588dp"
+        android:text="RECORD"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
