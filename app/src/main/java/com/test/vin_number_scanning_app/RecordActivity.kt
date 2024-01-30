@@ -23,12 +23,11 @@ import java.io.File
 import kotlin.math.sqrt
 
 class RecordActivity : AppCompatActivity(),
-    Timer.OnTimerTickListener,
-    WavAudioRecorder.OnAudioBufferAvailableListener {
+    Timer.OnTimerTickListener {
     private lateinit var binding: ActivityRecorderBinding
 
     // Variables needed for later building the .wav file and dynamic record button
-    private var audioRecorder: WavAudioRecorder? = null
+    private var audioRecorder: WaveRecorder? = null
     private var dateFormat = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss")
     private var date = dateFormat.format(Date())
 
@@ -40,7 +39,7 @@ class RecordActivity : AppCompatActivity(),
     private var currentBufferIndex = 0
     private val waveformPaint = Paint()
     private val waveformBuffer = FloatArray(720) // Adjust size as needed
-
+    private var isWaveformPaused = false
 
     private lateinit var waveformView: SurfaceView
     private lateinit var surfaceHolder: SurfaceHolder
@@ -73,12 +72,14 @@ class RecordActivity : AppCompatActivity(),
             setImageResource(R.drawable.ic_delete_disabled)
         }
 
+
         // Button that starts the recording using the WavAudioRecorderObject
         recordButton!!.setOnClickListener {
             if (audioRecorder?.isRecording == true && audioRecorder?.isPaused == false) {
                 timer.pause()
                 audioRecorder?.pauseRecording()
                 recordButton!!.setImageResource(R.drawable.ic_mic)
+                isWaveformPaused = true
 
                 deleteButton!!.isEnabled = true
                 listOrDoneButton!!.isEnabled = true
@@ -90,6 +91,7 @@ class RecordActivity : AppCompatActivity(),
                 timer.start()
                 audioRecorder?.resumeRecording()
                 recordButton!!.setImageResource(R.drawable.ic_pause)
+                isWaveformPaused = false
 
                 deleteButton!!.isEnabled = false
                 listOrDoneButton!!.isEnabled = false
@@ -131,14 +133,17 @@ class RecordActivity : AppCompatActivity(),
 
         // Create a file in internal storage
         val file = File(filesDir, sanitizedFileName)
-        audioRecorder = WavAudioRecorder(file)
-        audioRecorder!!.onAudioBufferAvailableListener = this
+        audioRecorder = WaveRecorder(file.absolutePath.toString())
+        audioRecorder?.onAudioBufferListener = { buffer ->
+            onAudioBufferAvailable(buffer)
+        }
 
         recordButton!!.setImageResource(R.drawable.ic_pause)
         listOrDoneButton!!.setImageResource(R.drawable.ic_done_disabled)
 
         listOrDoneButton!!.isEnabled = false
         deleteButton!!.isEnabled = false
+        isWaveformPaused = false
 
         audioRecorder?.startRecording()
         timer.start()
@@ -160,7 +165,8 @@ class RecordActivity : AppCompatActivity(),
         deleteButton!!.setImageResource(R.drawable.ic_delete_disabled)
 
         clearWaveformBuffer()
-        redrawSurfaceView()
+        currentBufferIndex = 0
+        clearCanvas()
     }
 
     private fun promptForFileNameAndStartRecording() {
@@ -199,6 +205,7 @@ class RecordActivity : AppCompatActivity(),
         } ?: run {
             Toast.makeText(this, "No recording to delete", Toast.LENGTH_SHORT).show()
         }
+
     }
 
 
@@ -215,12 +222,14 @@ class RecordActivity : AppCompatActivity(),
 
     }
 
-    override fun onAudioBufferAvailable(buffer: ByteArray) {
-        val amplitude = processAudioData(buffer)
-        updateWaveformBuffer(amplitude)
+    private fun onAudioBufferAvailable(buffer: ByteArray) {
+        if (!isWaveformPaused) {
+            val amplitude = processAudioData(buffer)
+            updateWaveformBuffer(amplitude)
 
-        runOnUiThread {
-            drawWaveform()
+            runOnUiThread {
+                drawWaveform()
+            }
         }
     }
 
@@ -265,6 +274,7 @@ class RecordActivity : AppCompatActivity(),
         for (i in waveformBuffer.indices) {
             waveformBuffer[i] = 0f
         }
+        redrawSurfaceView()
     }
 
     private fun redrawSurfaceView() {
@@ -272,6 +282,14 @@ class RecordActivity : AppCompatActivity(),
         if (canvas != null) {
             canvas.drawColor(Color.WHITE) // Clear the canvas with a white color
             drawWaveform() // You may want to modify this method to handle an empty buffer
+            surfaceHolder.unlockCanvasAndPost(canvas)
+        }
+    }
+
+    private fun clearCanvas() {
+        val canvas = surfaceHolder.lockCanvas()
+        if (canvas != null) {
+            canvas.drawColor(Color.WHITE) // Clear the canvas with white color
             surfaceHolder.unlockCanvasAndPost(canvas)
         }
     }
