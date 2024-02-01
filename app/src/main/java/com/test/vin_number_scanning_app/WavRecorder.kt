@@ -13,7 +13,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.coroutines.Continuation
 
 /**
  * The WaveRecorder class used to record Waveform audio file using AudioRecord class to get the audio stream in PCM encoding
@@ -84,9 +83,12 @@ class WaveRecorder(private var filePath: String) {
                     waveConfig.audioEncoding
                 )
             )
+            // Determines how long the audio has been recording for.
             timeModulus = bitPerSample(waveConfig.audioEncoding) * waveConfig.sampleRate / 8
-            if (waveConfig.channels == AudioFormat.CHANNEL_IN_STEREO)
+
+            if (waveConfig.channels == AudioFormat.CHANNEL_IN_STEREO) {
                 timeModulus *= 2
+            }
 
             audioSessionId = audioRecorder.audioSessionId
 

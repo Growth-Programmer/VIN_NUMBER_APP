@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <!-- Background for selected state -->
+        <shape>
+            <solid android:color="@color/purple_200"/> <!-- Example color for highlight -->
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+    <item>
+        <!-- Default background -->
+        <shape>
+            <solid android:color="@color/colorOnPrimary"/> <!-- Default background color -->
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+</selector>

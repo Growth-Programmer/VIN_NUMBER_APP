@@ -2,6 +2,7 @@ package com.test.vin_number_scanning_app
 
 
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
@@ -16,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.Composable
 import com.test.vin_number_scanning_app.databinding.ActivityRecorderBinding
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -109,6 +111,9 @@ class RecordActivity : AppCompatActivity(),
                 stopRecording()
                 listOrDoneButton!!.setImageResource(R.drawable.ic_list)
                 Toast.makeText(this, "Recording Saved", Toast.LENGTH_SHORT).show()
+            } else{
+                val myIntent = Intent(this, SavedRecordingsActivity()::class.java)
+                startActivity(myIntent)
             }
 
         }

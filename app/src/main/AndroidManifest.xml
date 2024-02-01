@@ -21,6 +21,10 @@
         android:theme="@style/Theme.GENERAL_THEME"
         tools:targetApi="31">
         <activity
+            android:name=".SavedRecordingsActivity"
+            android:theme="@style/Theme.GENERAL_THEME"
+            android:exported="false"/>
+        <activity
             android:name=".ScannerActivity"
             android:theme="@style/Theme.GENERAL_THEME"
             android:exported="false" />
