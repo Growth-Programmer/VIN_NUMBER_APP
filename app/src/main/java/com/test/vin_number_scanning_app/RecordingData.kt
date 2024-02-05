@@ -6,5 +6,6 @@ import java.io.File
 data class RecordingData(
     val file: File,
     val duration: String, // Formatted duration string
-    val date: String      // Formatted date string
+    val date: String,     // Formatted date string
+    val barcode: String
 )

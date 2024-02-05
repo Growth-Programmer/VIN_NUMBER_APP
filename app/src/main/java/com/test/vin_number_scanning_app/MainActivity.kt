@@ -1,8 +1,8 @@
 package com.test.vin_number_scanning_app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.test.vin_number_scanning_app.databinding.ActivityMainBinding
@@ -12,6 +12,7 @@ class MainActivity : AppCompatActivity() {
     //Activity XML binding. Camera and Microphone permission value.
     private val cameraPermission = android.Manifest.permission.CAMERA
     private var microphonePermission = android.Manifest.permission.RECORD_AUDIO
+    private var lastScannedBarcode: String? = null
 
     private lateinit var binding: ActivityMainBinding
 
@@ -48,8 +49,10 @@ class MainActivity : AppCompatActivity() {
             requestMicrophone()
         }
     }
-    private fun startRecordActivity(){
-        val myIntent = Intent(this, RecordActivity::class.java)
+    private fun startRecordActivity() {
+        val myIntent = Intent(this, RecordActivity::class.java).apply {
+            putExtra("LastScannedBarcode", lastScannedBarcode)
+        }
         startActivity(myIntent)
     }
 
@@ -72,13 +75,12 @@ class MainActivity : AppCompatActivity() {
 
     //Function to start barcode scanner.
     private fun startScanner() {
-        ScannerActivity.startScanner(this) { barcodes ->
-            barcodes.forEach { barcode ->
-                binding.VINOUTPUT.text = barcode.rawValue.toString()
-            }
+        ScannerActivity.startScanner(this) { barcode ->
+            binding.VINOUTPUT.text = barcode
+            lastScannedBarcode = "VIN: $barcode"
+
         }
     }
-
     //If the user has NOT given permissions, a rationale will appear to confirm their decision.
     private fun requestCameraPermission() {
         when {

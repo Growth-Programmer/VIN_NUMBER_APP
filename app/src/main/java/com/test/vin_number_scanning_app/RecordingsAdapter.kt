@@ -15,6 +15,7 @@ class RecordingsAdapter(
     val recordings: MutableList<File>,
     val recordingDates: MutableList<String>,
     val recordingDurations: MutableList<String>,
+    val recordingBarcodes: MutableList<String>,
     private val onPlayClicked: (File, ViewHolder) -> Unit,
     private val onRestartClicked: (File, ViewHolder) -> Unit,
     private val onDeleteClicked: (Int) -> Unit
@@ -35,6 +36,7 @@ class RecordingsAdapter(
         holder.tvRecordingName.text = recording.name // Access file name from File object
         holder.tvRecordingDate.text = recordingDates[position] // Access date based on position
         holder.tvRecordingDuration.text = recordingDurations[position] // Access duration based on position
+        holder.tvRecordingBarcodes.text = recordingBarcodes[position]
 
         val isSelected = position == selectedPosition
 
@@ -87,6 +89,7 @@ class RecordingsAdapter(
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvRecordingDate: TextView = itemView.findViewById(R.id.tvRecordingDate)
         val tvRecordingDuration: TextView = itemView.findViewById(R.id.tvRecordingDuration)
+        val tvRecordingBarcodes: TextView = itemView.findViewById(R.id.tvRecordingBarcodes)
         val progressBar: ProgressBar = itemView.findViewById(R.id.progressBar)
         val tvRecordingName: TextView = itemView.findViewById(R.id.tvRecordingName)
         val cardView: CardView = itemView.findViewById(R.id.cardViewId)
@@ -116,46 +119,45 @@ class RecordingsAdapter(
 
     fun updateRecordings(newRecordingData: List<RecordingData>) {
         // Detect additions and removals
-        val oldRecordings = HashSet(recordings)
-        val newRecordingsSet = HashSet(newRecordingData.map { it.file })
+        val oldRecordingsSet = recordings.toSet()
+        val newRecordingsSet = newRecordingData.map { it.file }.toSet()
 
         // Handle removals
-        oldRecordings
-            .filterNot { it in newRecordingsSet }
-            .forEach { file ->
+        oldRecordingsSet.forEach { file ->
+            if (file !in newRecordingsSet) {
                 val index = recordings.indexOf(file)
-                recordings.removeAt(index)
-                recordingDates.removeAt(index)
-                recordingDurations.removeAt(index)
-                notifyItemRemoved(index)
+                if (index != -1) {
+                    recordings.removeAt(index)
+                    recordingDates.removeAt(index)
+                    recordingDurations.removeAt(index)
+                    recordingBarcodes.removeAt(index)
+                    notifyItemRemoved(index)
+                }
             }
+        }
 
         // Handle additions and updates
         newRecordingData.forEachIndexed { newIndex, recordingData ->
             val existingIndex = recordings.indexOf(recordingData.file)
             if (existingIndex == -1) {
                 // New item
-                recordings.add(newIndex, recordingData.file)
-                recordingDates.add(newIndex, recordingData.date)
-                recordingDurations.add(newIndex, recordingData.duration)
-                notifyItemInserted(newIndex)
-            } else if (existingIndex != newIndex) {
-                // Item moved within the list
-                recordings.removeAt(existingIndex)
-                recordingDates.removeAt(existingIndex)
-                recordingDurations.removeAt(existingIndex)
-                recordings.add(newIndex, recordingData.file)
-                recordingDates.add(newIndex, recordingData.date)
-                recordingDurations.add(newIndex, recordingData.duration)
-                notifyItemMoved(existingIndex, newIndex)
-                notifyItemChanged(newIndex) // Update the item at the new position
+                recordings.add(recordingData.file)
+                recordingDates.add(recordingData.date)
+                recordingDurations.add(recordingData.duration)
+                recordingBarcodes.add(recordingData.barcode ?: "No Barcode")
+                notifyItemInserted(recordings.size - 1)
             } else {
-                // Item already in the same position
-                if (recordingDates[existingIndex] != recordingData.date || recordingDurations[existingIndex] != recordingData.duration) {
-                    recordingDates[existingIndex] = recordingData.date
-                    recordingDurations[existingIndex] = recordingData.duration
-                    notifyItemChanged(existingIndex) // Update the item if date or duration changed
+                // Update existing item
+                recordingDates[existingIndex] = recordingData.date
+                recordingDurations[existingIndex] = recordingData.duration
+                recordingBarcodes[existingIndex] = recordingData.barcode ?: "No Barcode"
+                if (existingIndex != newIndex) {
+                    // If item has moved, adjust the list
+                    val movedRecording = recordings.removeAt(existingIndex)
+                    recordings.add(newIndex, movedRecording)
+                    notifyItemMoved(existingIndex, newIndex)
                 }
+                notifyItemChanged(existingIndex) // Update the item
             }
         }
     }

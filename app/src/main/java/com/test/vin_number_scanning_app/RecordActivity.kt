@@ -3,6 +3,7 @@ package com.test.vin_number_scanning_app
 
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
@@ -22,7 +23,7 @@ import java.io.File
 import kotlin.math.sqrt
 
 class RecordActivity : AppCompatActivity(),
-    Timer.OnTimerTickListener, SurfaceHolder.Callback{
+    Timer.OnTimerTickListener, SurfaceHolder.Callback {
     private lateinit var binding: ActivityRecorderBinding
 
     // Variables needed for later building the .wav file and dynamic record button
@@ -31,7 +32,7 @@ class RecordActivity : AppCompatActivity(),
     private var listOrDoneButton: ImageButton? = null
     private var deleteButton: ImageButton? = null
 
-    private var lastRecordedFilePath : String? = null
+    private var lastRecordedFilePath: String? = null
     private var currentBufferIndex = 0
     private val waveformPaint = Paint()
     private val waveformBuffer = FloatArray(720) // Adjust size as needed
@@ -41,7 +42,6 @@ class RecordActivity : AppCompatActivity(),
     private lateinit var surfaceHolder: SurfaceHolder
     private lateinit var screenTimer: TextView
     private lateinit var timer: Timer
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,14 +109,14 @@ class RecordActivity : AppCompatActivity(),
                 stopRecording()
                 listOrDoneButton!!.setImageResource(R.drawable.ic_list)
                 Toast.makeText(this, "Recording Saved", Toast.LENGTH_SHORT).show()
-            } else{
+            } else {
                 val myIntent = Intent(this, SavedRecordingsActivity()::class.java)
                 startActivity(myIntent)
             }
 
         }
 
-        deleteButton!!.setOnClickListener{
+        deleteButton!!.setOnClickListener {
             if (audioRecorder?.isRecording == true && audioRecorder?.isPaused == true) {
                 stopRecording()
                 deleteRecordingFile()
@@ -166,7 +166,12 @@ class RecordActivity : AppCompatActivity(),
         audioRecorder?.stopRecording()
         audioRecorder = null
 
-        screenTimer.text= "00:00:00"
+        lastRecordedFilePath?.let {
+            val recordingFile = File(it)
+            onRecordingCompleted(recordingFile)
+        }
+
+        screenTimer.text = "00:00:00"
         timer.stop()
 
         recordButton!!.setImageResource(R.drawable.ic_mic)
@@ -192,8 +197,11 @@ class RecordActivity : AppCompatActivity(),
             if (validateFileName(fileName)) {
                 startRecordingWithFileName(fileName)
             } else {
-                Toast.makeText(this,
-                    "Invalid file name. No Special characters allowed except \"-\" or \"_\".", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Invalid file name. No Special characters allowed except \"-\" or \"_\".",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
@@ -210,14 +218,17 @@ class RecordActivity : AppCompatActivity(),
                 // Reset the path after successful deletion
                 lastRecordedFilePath = null
             } else {
-                Toast.makeText(this, "Failed to delete recording or file does not exist", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to delete recording or file does not exist",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         } ?: run {
             Toast.makeText(this, "No recording to delete", Toast.LENGTH_SHORT).show()
         }
 
     }
-
 
 
     private fun validateFileName(fileName: String): Boolean {
@@ -256,7 +267,8 @@ class RecordActivity : AppCompatActivity(),
                         val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
                         val x = i.toFloat() / waveformBuffer.size * canvas.width
                         val height = waveformBuffer[bufferIndex] // Amplitude value
-                        val rect = RectF(x, canvas.height / 2 - height, x + 1, canvas.height / 2 + height)
+                        val rect =
+                            RectF(x, canvas.height / 2 - height, x + 1, canvas.height / 2 + height)
                         canvas.drawRoundRect(rect, 2f, 2f, waveformPaint)
                     }
                 } finally {
@@ -279,6 +291,7 @@ class RecordActivity : AppCompatActivity(),
         val mean = sum / (buffer.size / 2)
         return sqrt(mean).toFloat() * 32768 // Scale back up to original amplitude range
     }
+
     private fun updateWaveformBuffer(amplitude: Float) {
         waveformBuffer[currentBufferIndex] = amplitude
         currentBufferIndex = (currentBufferIndex + 1) % waveformBuffer.size
@@ -332,6 +345,24 @@ class RecordActivity : AppCompatActivity(),
             currentBufferIndex = 0
         }
 
+    }
+
+    fun onRecordingCompleted(recordingFile: File) {
+        // Retrieve the barcode passed from MainActivity
+        val barcode = intent.getStringExtra("LastScannedBarcode")
+        barcode?.let {
+            // Save the barcode using the recording file's name as the identifier
+            saveScannedBarcode(recordingFile.name, it)
+        }
+        // Any other logic that needs to be performed after the recording is completed
+    }
+
+    private fun saveScannedBarcode(recordingIdentifier: String, barcode: String) {
+        val sharedPreferences = getSharedPreferences("MySharedPrefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString("Barcode_$recordingIdentifier", barcode)
+            apply()
+        }
     }
 
 

@@ -90,34 +90,31 @@ class ScannerActivity : AppCompatActivity() {
 
     //Ignores "UnsafeOptInUsage" error.
     @SuppressLint("UnsafeOptInUsageError")
-    private fun processImageProxy(barcodeScanner : BarcodeScanner, imageProxy: ImageProxy){
-
-        //Input image (barcode) that can NEVER be null. This value gets the image from Image Proxy.
+    private fun processImageProxy(barcodeScanner: BarcodeScanner, imageProxy: ImageProxy) {
         val inputImage = InputImage.fromMediaImage(imageProxy.image!!, imageProxy.imageInfo.rotationDegrees)
 
         barcodeScanner.process(inputImage)
-            .addOnSuccessListener{
-                barcodes -> if(barcodes.isNotEmpty()){
-                    onScan?.invoke(barcodes)
+            .addOnSuccessListener { barcodes ->
+                if (barcodes.isNotEmpty()) {
+                    barcodes.first().rawValue?.let { onScan?.invoke(it) }
                     onScan = null
                     finish()
+                }
             }
-                //If image analysis fails, it gets logged for error handling.
-            }.addOnFailureListener{
+            .addOnFailureListener {
                 it.printStackTrace()
-                //Once image analysis completes, the image proxy is closed.
-            }.addOnCompleteListener{
+            }
+            .addOnCompleteListener {
                 imageProxy.close()
             }
     }
-    companion object{
-        private var onScan: ((barcodes: List<Barcode>) -> Unit)? = null
-        //Pass scanner activity information to Main Activity.
-        fun startScanner(context: Context, onScan: (barcodes: List<Barcode>)-> Unit){
+
+    companion object {
+        private var onScan: ((String) -> Unit)? = null
+
+        fun startScanner(context: Context, onScan: (String) -> Unit) {
             this.onScan = onScan
-            Intent(context, ScannerActivity::class.java).also{
-                context.startActivity(it)
-            }
+            Intent(context, ScannerActivity::class.java).also { context.startActivity(it) }
         }
     }
 }

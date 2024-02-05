@@ -1,5 +1,6 @@
 package com.test.vin_number_scanning_app
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -30,6 +31,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerViewRecordings)
         recordingsAdapter = RecordingsAdapter(
+            mutableListOf(),
             mutableListOf(),
             mutableListOf(),
             mutableListOf(),
@@ -84,10 +86,15 @@ class SavedRecordingsActivity : AppCompatActivity() {
         val filesList = internalStorageDir.walk()
             .filter { it.isFile && it.extension.equals("wav", ignoreCase = true) }
             .toList()
+
         val recordingDataList = filesList.map { file ->
             val lastModifiedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(file.lastModified()))
             val duration = getAudioFileDuration(file)
-            RecordingData(file, duration, lastModifiedDate)
+
+            // Use file name or another unique identifier as the key to retrieve the barcode
+            val barcode = getBarcodeForRecording(file.name)
+
+            RecordingData(file, duration, lastModifiedDate, barcode ?: "No Barcode")
         }
 
         recordingsAdapter.updateRecordings(recordingDataList)
@@ -197,5 +204,12 @@ class SavedRecordingsActivity : AppCompatActivity() {
         val seconds = TimeUnit.MILLISECONDS.toSeconds(durationInMillis.toLong()) - TimeUnit.MINUTES.toSeconds(minutes)
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
+
+    private fun getBarcodeForRecording(recordingIdentifier: String): String? {
+        val sharedPreferences = getSharedPreferences("MySharedPrefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("Barcode_$recordingIdentifier", null)
+    }
+
+
 }
 
