@@ -2,13 +2,13 @@ package com.test.vin_number_scanning_app
 
 
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.widget.EditText
@@ -17,22 +17,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.Composable
 import com.test.vin_number_scanning_app.databinding.ActivityRecorderBinding
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.io.File
 import kotlin.math.sqrt
 
 class RecordActivity : AppCompatActivity(),
-    Timer.OnTimerTickListener {
+    Timer.OnTimerTickListener, SurfaceHolder.Callback{
     private lateinit var binding: ActivityRecorderBinding
 
     // Variables needed for later building the .wav file and dynamic record button
     private var audioRecorder: WaveRecorder? = null
-    private var dateFormat = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss")
-    private var date = dateFormat.format(Date())
-
     private var recordButton: ImageButton? = null
     private var listOrDoneButton: ImageButton? = null
     private var deleteButton: ImageButton? = null
@@ -49,6 +43,7 @@ class RecordActivity : AppCompatActivity(),
     private lateinit var timer: Timer
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityRecorderBinding.inflate(layoutInflater)
@@ -56,6 +51,9 @@ class RecordActivity : AppCompatActivity(),
 
         waveformView = findViewById(R.id.waveformView)
         surfaceHolder = waveformView.holder
+        waveformView.holder.addCallback(this)
+
+
         waveformPaint.color = Color.parseColor("#D8BFD8")
         waveformPaint.strokeWidth = 2f
         waveformPaint.style = Paint.Style.STROKE
@@ -134,7 +132,7 @@ class RecordActivity : AppCompatActivity(),
     private fun startRecordingWithFileName(fileName: String) {
         // Append .wav if not present and sanitize the file name
         val sanitizedFileName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
-            .replace("[^a-zA-Z0-9-_\\.]+".toRegex(), "")
+            .replace("[^a-zA-Z0-9-_.]+".toRegex(), "")
 
         // Create a file in internal storage
         val file = File(filesDir, sanitizedFileName)
@@ -155,7 +153,14 @@ class RecordActivity : AppCompatActivity(),
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        redrawSurfaceView()
+    }
+
+
     // Method that stops the recording
+    @SuppressLint("SetTextI18n")
     private fun stopRecording() {
         lastRecordedFilePath = audioRecorder?.getOutputFilePath()
         audioRecorder?.stopRecording()
@@ -239,21 +244,25 @@ class RecordActivity : AppCompatActivity(),
     }
 
     private fun drawWaveform() {
-        val canvas = surfaceHolder.lockCanvas()
-        if (canvas != null) {
-            canvas.drawColor(Color.WHITE) // Clear the canvas
-            waveformView.setBackgroundColor(Color.TRANSPARENT)
+        synchronized(surfaceHolder) { // Ensure synchronized access if needed
+            val canvas = surfaceHolder.lockCanvas()
+            if (canvas != null) {
+                try {
+                    canvas.drawColor(Color.WHITE) // Clear the canvas
+                    waveformView.setBackgroundColor(Color.TRANSPARENT)
 
-            // Draw the waveform
-            for (i in waveformBuffer.indices) {
-                val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
-                val x = i.toFloat() / waveformBuffer.size * canvas.width
-                val height = waveformBuffer[bufferIndex] // Amplitude value
-                val rect = RectF(x, canvas.height / 2 - height, x + 1, canvas.height / 2 + height)
-                canvas.drawRoundRect(rect, 2f, 2f, waveformPaint)
+                    // Draw the waveform
+                    for (i in waveformBuffer.indices) {
+                        val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
+                        val x = i.toFloat() / waveformBuffer.size * canvas.width
+                        val height = waveformBuffer[bufferIndex] // Amplitude value
+                        val rect = RectF(x, canvas.height / 2 - height, x + 1, canvas.height / 2 + height)
+                        canvas.drawRoundRect(rect, 2f, 2f, waveformPaint)
+                    }
+                } finally {
+                    surfaceHolder.unlockCanvasAndPost(canvas) // Ensure this always gets called
+                }
             }
-
-            surfaceHolder.unlockCanvasAndPost(canvas)
         }
     }
 
@@ -283,21 +292,48 @@ class RecordActivity : AppCompatActivity(),
     }
 
     private fun redrawSurfaceView() {
-        val canvas = surfaceHolder.lockCanvas()
-        if (canvas != null) {
-            canvas.drawColor(Color.WHITE) // Clear the canvas with a white color
-            drawWaveform() // You may want to modify this method to handle an empty buffer
-            surfaceHolder.unlockCanvasAndPost(canvas)
+        synchronized(surfaceHolder) {
+            val canvas = surfaceHolder.lockCanvas()
+            if (canvas != null) {
+                try {
+                    canvas.drawColor(Color.WHITE) // Clear the canvas with a white color
+                    drawWaveform() // Pass the canvas to drawWaveform
+                } finally {
+                    surfaceHolder.unlockCanvasAndPost(canvas)
+                }
+            }
         }
     }
 
     private fun clearCanvas() {
-        val canvas = surfaceHolder.lockCanvas()
-        if (canvas != null) {
-            canvas.drawColor(Color.WHITE) // Clear the canvas with white color
-            surfaceHolder.unlockCanvasAndPost(canvas)
+        synchronized(surfaceHolder) {
+            val canvas = surfaceHolder.lockCanvas()
+            if (canvas != null) {
+                try {
+                    canvas.drawColor(Color.WHITE) // Clear the canvas
+                } finally {
+                    surfaceHolder.unlockCanvasAndPost(canvas)
+                }
+            }
         }
     }
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        redrawSurfaceView()
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        redrawSurfaceView()
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        synchronized(surfaceHolder) {
+            clearWaveformBuffer()
+            currentBufferIndex = 0
+        }
+
+    }
+
 
 }
 

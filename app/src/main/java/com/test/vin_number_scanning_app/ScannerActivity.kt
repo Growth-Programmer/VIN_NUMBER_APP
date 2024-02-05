@@ -65,7 +65,7 @@ class ScannerActivity : AppCompatActivity() {
     private fun bindInputAnalyzer(){
         val barcodeScanner : BarcodeScanner = BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+                .setBarcodeFormats(Barcode.FORMAT_CODE_128)
                 .build()
         )
 

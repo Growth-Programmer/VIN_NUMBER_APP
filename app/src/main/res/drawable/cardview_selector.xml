@@ -3,7 +3,7 @@
     <item android:state_selected="true">
         <!-- Background for selected state -->
         <shape>
-            <solid android:color="@color/purple_200"/> <!-- Example color for highlight -->
+            <solid android:color="@color/teal_700"/> <!-- Example color for highlight -->
             <corners android:radius="4dp"/>
         </shape>
     </item>
