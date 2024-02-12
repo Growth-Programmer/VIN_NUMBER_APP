@@ -156,6 +156,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
         // Update adapter and UI
         recordingsAdapter.notifyItemRemoved(position)
+        recordingsAdapter.notifyItemRangeChanged(position, recordingsAdapter.itemCount)
 
         // Additional logic if needed, such as stopping the MediaPlayer
         if (currentPlayingPosition == position) {

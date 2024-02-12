@@ -34,6 +34,8 @@ class RecordingsAdapter(
 
     // Called by RecyclerView to display the data at the specified position.
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        // Resets the state every update to clear any UI resources from card deletions.
+        holder.resetViewHolderState()
         val recording = recordings[position]
         holder.tvRecordingName.text = recording.name            // Set the file name.
         holder.tvRecordingDate.text = recordingDates[position]  // Set the recording date.
@@ -97,7 +99,18 @@ class RecordingsAdapter(
             progressAnimator?.cancel()
             progressBar.visibility = View.GONE
         }
+
+        fun resetViewHolderState() {
+            // Reset any specific states here, such as visibility of buttons or progress bar
+            progressBar.visibility = View.GONE
+            progressBar.progress = 0
+            btnPlayPause.visibility = View.GONE
+            btnRestart.visibility = View.GONE
+            btnDeleteRecording.visibility = View.GONE
+        }
     }
+
+
 
     // Updates the adapter with new data.
     fun updateRecordings(newRecordingData: List<RecordingData>) {
