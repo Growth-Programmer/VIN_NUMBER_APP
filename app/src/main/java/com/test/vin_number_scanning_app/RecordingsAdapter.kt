@@ -11,35 +11,39 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
 
+// Adapter class for a RecyclerView to display a list of recordings.
 class RecordingsAdapter(
-    val recordings: MutableList<File>,
-    val recordingDates: MutableList<String>,
-    val recordingDurations: MutableList<String>,
-    val recordingBarcodes: MutableList<String>,
-    private val onPlayClicked: (File, ViewHolder) -> Unit,
-    private val onRestartClicked: (File, ViewHolder) -> Unit,
-    private val onDeleteClicked: (Int) -> Unit
+    val recordings: MutableList<File>,              // List of recording files.
+    val recordingDates: MutableList<String>,        // List of recording dates.
+    val recordingDurations: MutableList<String>,    // List of recording durations.
+    val recordingBarcodes: MutableList<String>,     // List of associated barcodes for each recording.
+    private val onPlayClicked: (File, ViewHolder) -> Unit,   // Callback when play button is clicked.
+    private val onRestartClicked: (File, ViewHolder) -> Unit,// Callback when restart button is clicked.
+    private val onDeleteClicked: (Int) -> Unit              // Callback when delete button is clicked.
 ) : RecyclerView.Adapter<RecordingsAdapter.ViewHolder>() {
 
+    // Holds the position of the currently selected item in the RecyclerView.
     private var selectedPosition: Int = RecyclerView.NO_POSITION
 
-
+    // Called when RecyclerView needs a new ViewHolder of the given type to represent an item.
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        // Inflate the layout for each item of the RecyclerView.
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_recordings, parent, false)
         return ViewHolder(view)
     }
 
-
-
+    // Called by RecyclerView to display the data at the specified position.
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val recording = recordings[position]
-        holder.tvRecordingName.text = recording.name // Access file name from File object
-        holder.tvRecordingDate.text = recordingDates[position] // Access date based on position
-        holder.tvRecordingDuration.text = recordingDurations[position] // Access duration based on position
-        holder.tvRecordingBarcodes.text = recordingBarcodes[position]
+        holder.tvRecordingName.text = recording.name            // Set the file name.
+        holder.tvRecordingDate.text = recordingDates[position]  // Set the recording date.
+        holder.tvRecordingDuration.text = recordingDurations[position] // Set the recording duration.
+        holder.tvRecordingBarcodes.text = recordingBarcodes[position]  // Set the barcode.
 
+        // Determine if the current item is selected.
         val isSelected = position == selectedPosition
 
+        // Set visibility of controls based on whether the item is selected.
         holder.tvRecordingDate.visibility = View.VISIBLE
         holder.tvRecordingDuration.visibility = View.VISIBLE
         holder.btnPlayPause.visibility = if (isSelected) View.VISIBLE else View.GONE
@@ -48,44 +52,24 @@ class RecordingsAdapter(
         holder.progressBar.visibility = if (isSelected) View.VISIBLE else View.GONE
         holder.cardView.isSelected = isSelected
 
-
+        // Set click listeners for the card and buttons.
         holder.cardView.setOnClickListener {
             val previousSelectedPosition = selectedPosition
             selectedPosition = if (isSelected) RecyclerView.NO_POSITION else position
-
             notifyItemChanged(previousSelectedPosition)
             notifyItemChanged(selectedPosition)
-
         }
 
-        holder.btnPlayPause.setOnClickListener {
-            onPlayClicked(recording, holder)
-        }
-
-        holder.btnRestart.setOnClickListener {
-            onRestartClicked(recording, holder)
-        }
-
-        holder.btnDeleteRecording.setOnClickListener {
-            onDeleteClicked(position)
-        }
+        holder.btnPlayPause.setOnClickListener { onPlayClicked(recording, holder) }
+        holder.btnRestart.setOnClickListener { onRestartClicked(recording, holder) }
+        holder.btnDeleteRecording.setOnClickListener { onDeleteClicked(position) }
     }
 
-
+    // Returns the total number of items in the data set held by the adapter.
     override fun getItemCount(): Int = recordings.size
 
-    fun deleteItem(position: Int) {
-        if (position == selectedPosition) {
-            // Reset the current playing position and state
-            selectedPosition = RecyclerView.NO_POSITION
-        }
-        recordings.removeAt(position)
-        notifyItemRemoved(position)
 
-        // Notify any moved items to update their state
-        notifyItemRangeChanged(position, itemCount - position)
-    }
-
+    // ViewHolder class provides a reference to the views for each data item.
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvRecordingDate: TextView = itemView.findViewById(R.id.tvRecordingDate)
         val tvRecordingDuration: TextView = itemView.findViewById(R.id.tvRecordingDuration)
@@ -98,27 +82,27 @@ class RecordingsAdapter(
         val btnDeleteRecording: ImageButton = itemView.findViewById(R.id.btnDeleteRecording)
         var progressAnimator: ObjectAnimator? = null
 
+        // Starts the animation for the progress bar.
         fun startProgressAnimation(max: Int) {
-            progressBar.visibility = View.VISIBLE
             progressBar.max = max
             progressBar.progress = 0
             progressAnimator = ObjectAnimator.ofInt(progressBar, "progress", 0, max)
-            progressAnimator?.duration = max.toLong()  // Duration equal to the length of the recording
+            progressAnimator?.duration = max.toLong()
             progressAnimator?.start()
         }
 
+        // Resets the progress bar animation.
         fun resetProgressAnimation() {
             progressBar.progress = 0
             progressAnimator?.cancel()
             progressBar.visibility = View.GONE
         }
-
-
     }
 
-
+    // Updates the adapter with new data.
     fun updateRecordings(newRecordingData: List<RecordingData>) {
-        // Detect additions and removals
+        // Logic to update and refresh the adapter's data based on new data received.
+        // This includes handling new items, deleted items, and updated items.
         val oldRecordingsSet = recordings.toSet()
         val newRecordingsSet = newRecordingData.map { it.file }.toSet()
 

@@ -1,29 +1,30 @@
 package com.test.vin_number_scanning_app
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.test.vin_number_scanning_app.databinding.ActivityMainBinding
 
-
+// Main Activity. This is the first screen the user will see.
 class MainActivity : AppCompatActivity() {
-    //Activity XML binding. Camera and Microphone permission value.
-    private val cameraPermission = android.Manifest.permission.CAMERA
-    private var microphonePermission = android.Manifest.permission.RECORD_AUDIO
-    private var lastScannedBarcode: String? = null
 
-    private lateinit var binding: ActivityMainBinding
+    // Member Variables.
+    private val cameraPermission = android.Manifest.permission.CAMERA // String constant that stores Android camera permission dialogue.
+    private var microphonePermission = android.Manifest.permission.RECORD_AUDIO // String constant that stores Android mic permission dialogue.
+    private var lastScannedBarcode: String? = null // Stores the last scanned barcode from ScannerActivity to persist barcode data for other activities. Can be null.
 
-    //Stores permission result and calls start scanner method if camera access is given.
+    private lateinit var binding: ActivityMainBinding // Layout Binding.
+
+    // Handles the result of a permission request (Camera).
     private val requestPermissionLauncherCamera =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                startScanner()
+                startScannerActivity()
             }
         }
-    //Stores permission result of microphone and starts the Record Activity screen if microphone access is given.
+
+    // Handles the result of a permission request (Mic).
     private val requestPermissionLauncherMic =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
@@ -32,23 +33,29 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-    //Set opening content view when the app starts.
+    // Lifecycle callback method. Called whenever the activity is started.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //ActivityMainBinding is the first view on app start.
+        // Binds the XML layout and "inflates" it onto the screen.
         binding = ActivityMainBinding.inflate(layoutInflater)
+
+        // Sets the activity's content view to the root view of inflated layout.
         setContentView(binding.root)
 
-        //Button Listener in root binding view.
+        // Listener for when the ScanVIN button is pressed. Starts ScannerActivity depending on camera permission.
         binding.ScanVIN.setOnClickListener {
             requestCameraAndStartScanner()
         }
-        //Button Listener for when the user wants to record. Switches for main activity to record activity.
+        // Listener for when the recordButton is pressed. Starts RecordActivity depending on microphone permission.
         binding.recordButton.setOnClickListener {
-            requestMicrophone()
+            requestMicrophoneAndStartRecord()
         }
     }
+
+    /* <-------------------------------------------------------------------------------------------- ACTIVITIES ----------------------------------------------------------------------------------------------------------> */
+
+    // Starts the RecordActivity and passes it the lastScannedBarcode variable to persist its data through another class.
     private fun startRecordActivity() {
         val myIntent = Intent(this, RecordActivity::class.java).apply {
             putExtra("LastScannedBarcode", lastScannedBarcode)
@@ -56,16 +63,27 @@ class MainActivity : AppCompatActivity() {
         startActivity(myIntent)
     }
 
-    //Checks if camera permissions have been granted or not.
+    // Starts ScannerActivity and sets the binded xml text value to whatever alphanumeric barcode was scanned, and stores it to lastScannedBarcode.
+    private fun startScannerActivity() {
+        ScannerActivity.startScanner(this) { barcode ->
+            binding.VINOUTPUT.text = barcode
+            lastScannedBarcode = "VIN: $barcode"
+
+        }
+    }
+    /* <-------------------------------------------------------------------------------------------- PERMISSIONS ----------------------------------------------------------------------------------------------------------> */
+
+    // Handles camera permission request.
     private fun requestCameraAndStartScanner() {
         if (isPermissionGranted(cameraPermission)) {
-            startScanner()
+            startScannerActivity()
         } else {
             requestCameraPermission()
         }
     }
 
-    private fun requestMicrophone() {
+    // Handles microphone permission request.
+    private fun requestMicrophoneAndStartRecord() {
         if (isPermissionGranted(microphonePermission)) {
             startRecordActivity()
         } else {
@@ -73,15 +91,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //Function to start barcode scanner.
-    private fun startScanner() {
-        ScannerActivity.startScanner(this) { barcode ->
-            binding.VINOUTPUT.text = barcode
-            lastScannedBarcode = "VIN: $barcode"
-
-        }
-    }
-    //If the user has NOT given permissions, a rationale will appear to confirm their decision.
+    // Handles permission request if the user initially rejected giving camera access.
     private fun requestCameraPermission() {
         when {
             shouldShowRequestPermissionRationale(cameraPermission) -> {
@@ -97,7 +107,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //If the user has NOT given permissions, a rationale will appear to confirm their decision.
+    // Handles permission request if the user initially rejected giving microphone access.
     private fun requestMicrophonePermission() {
         when {
             shouldShowRequestPermissionRationale(microphonePermission) -> {
@@ -105,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                     openPermissionSettings()
                 }
             }
-            //Otherwise, microphone will start listening
+
             else -> {
                 requestPermissionLauncherMic.launch(microphonePermission)
             }
