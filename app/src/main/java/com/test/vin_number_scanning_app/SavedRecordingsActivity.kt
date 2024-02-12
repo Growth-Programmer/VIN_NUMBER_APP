@@ -17,18 +17,26 @@ import java.util.concurrent.TimeUnit
 
 class SavedRecordingsActivity : AppCompatActivity() {
 
-    private val handler = Handler(Looper.getMainLooper())
-    private var mediaPlayer: MediaPlayer? = null
-    private var currentPlayingPosition: Int = RecyclerView.NO_POSITION
-    private var currentPlayingHolder: RecordingsAdapter.ViewHolder? = null
-    private lateinit var recordingsAdapter: RecordingsAdapter
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var progressRunnable: Runnable
+    private val handler = Handler(Looper.getMainLooper()) // Handler to get main thread.
 
+    private var mediaPlayer: MediaPlayer? = null // MediaPlayers instance for playing audio files.
+
+    private var currentPlayingPosition: Int = RecyclerView.NO_POSITION // Tracks the position of currently playing recordings in the list.
+
+    private var currentPlayingHolder: RecordingsAdapter.ViewHolder? = null // Holds a reference to the ViewHolder of the currently playing item.
+
+    private lateinit var recordingsAdapter: RecordingsAdapter //Adapter for managing and displaying the list of recordings.
+
+    private lateinit var recyclerView: RecyclerView // Recycler View for displaying the list of recordings.
+
+    private lateinit var progressRunnable: Runnable // Runnable for updating the progress of the currently playing recording.
+
+    // Called on the start of the Activity
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_saved_recordings)
 
+        // Set up RecyclerView and its Adapter
         recyclerView = findViewById(R.id.recyclerViewRecordings)
         recordingsAdapter = RecordingsAdapter(
             mutableListOf(),
@@ -42,6 +50,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         recyclerView.adapter = recordingsAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
+        // Define a Runnable to update the playback progress.
         progressRunnable = Runnable { // Initialize the runnable here
             mediaPlayer?.let {
                 if (it.isPlaying) {
@@ -52,16 +61,18 @@ class SavedRecordingsActivity : AppCompatActivity() {
             }
         }
 
-
+        // Load Recordings
         loadRecordings()
     }
 
+    // Handles playback of a recording.
     private fun playRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         if (currentPlayingPosition != holder.bindingAdapterPosition) {
             resetCurrentPlayback()
             currentPlayingPosition = holder.bindingAdapterPosition
             currentPlayingHolder = holder
 
+            // Mapping of each file to its recording data.
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(file.absolutePath)
                 setOnPreparedListener { mp ->
@@ -80,7 +91,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
 
-
+    // Load data from recordings
     private fun loadRecordings() {
         val internalStorageDir = filesDir
         val filesList = internalStorageDir.walk()
@@ -100,6 +111,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         recordingsAdapter.updateRecordings(recordingDataList)
     }
 
+    // Restarts the playback
     private fun restartRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         // Reset current playback
         mediaPlayer?.apply {
@@ -125,7 +137,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
             prepareAsync()
         }
     }
-
+    // Delete the recording and its associated data from storage.
     private fun deleteRecording(position: Int) {
         if (position < 0 || position >= recordingsAdapter.recordings.size) {
             return // Ensure the position is valid
@@ -140,6 +152,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         recordingsAdapter.recordings.removeAt(position)
         recordingsAdapter.recordingDates.removeAt(position)
         recordingsAdapter.recordingDurations.removeAt(position)
+        recordingsAdapter.recordingBarcodes.removeAt(position)
 
         // Update adapter and UI
         recordingsAdapter.notifyItemRemoved(position)
@@ -156,7 +169,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
 
 
-
+    // Used to reset or clear any UI or resources that remain after deleting from storage.
     private fun resetCurrentPlayback() {
         mediaPlayer?.apply {
             if (isPlaying) {
@@ -172,18 +185,20 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
     }
 
+    // Updates progress bar
     private fun startUpdatingProgressBar() {
         handler.post(progressRunnable)
     }
 
-
+    // Resets Current Player
     override fun onStop() {
         super.onStop()
         handler.removeCallbacks(progressRunnable)
         resetCurrentPlayback()
     }
 
-        private fun getAudioFileDuration(file: File): String {
+    // Retrieves the duration of an audio file.
+    private fun getAudioFileDuration(file: File): String {
         val mediaPlayer = MediaPlayer()
         var durationFormatted = "Duration: Unknown"
         try {
@@ -199,12 +214,14 @@ class SavedRecordingsActivity : AppCompatActivity() {
         return durationFormatted
     }
 
+    // Formats the duration from milliseconds to a readable string format.
     private fun formatDuration(durationInMillis: Int): String {
         val minutes = TimeUnit.MILLISECONDS.toMinutes(durationInMillis.toLong())
         val seconds = TimeUnit.MILLISECONDS.toSeconds(durationInMillis.toLong()) - TimeUnit.MINUTES.toSeconds(minutes)
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
 
+    // Retrieves the associated barcode for a recording from SharedPreferences.
     private fun getBarcodeForRecording(recordingIdentifier: String): String? {
         val sharedPreferences = getSharedPreferences("MySharedPrefs", Context.MODE_PRIVATE)
         return sharedPreferences.getString("Barcode_$recordingIdentifier", null)
