@@ -316,7 +316,7 @@ class RecordActivity : AppCompatActivity(),
             val canvas = surfaceHolder.lockCanvas()
             if (canvas != null) {
                 try {
-                    canvas.drawColor(Color.WHITE)
+                    canvas.drawColor(Color.DKGRAY)
                     waveformView.setBackgroundColor(Color.TRANSPARENT)
 
                     val midHeight = canvas.height / 2f
@@ -375,7 +375,7 @@ class RecordActivity : AppCompatActivity(),
             val canvas = surfaceHolder.lockCanvas()
             if (canvas != null) {
                 try {
-                    canvas.drawColor(Color.WHITE)
+                    canvas.drawColor(Color.DKGRAY)
                     drawWaveform()
                 } finally {
                     surfaceHolder.unlockCanvasAndPost(canvas)
@@ -397,7 +397,7 @@ class RecordActivity : AppCompatActivity(),
             val canvas = surfaceHolder.lockCanvas()
             if (canvas != null) {
                 try {
-                    canvas.drawColor(Color.WHITE)
+                    canvas.drawColor(Color.DKGRAY)
                 } finally {
                     surfaceHolder.unlockCanvasAndPost(canvas)
                 }
@@ -407,7 +407,7 @@ class RecordActivity : AppCompatActivity(),
 
     // Callbacks to detect any changes to the surface-view if it was not caused by the code in this class.
     override fun surfaceCreated(holder: SurfaceHolder) {
-        redrawSurfaceView()
+      // Do nothing
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {

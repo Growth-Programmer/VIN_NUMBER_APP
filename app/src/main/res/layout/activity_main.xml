@@ -4,10 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/grayDark"
     android:orientation="vertical">
 
     <Button
         android:id="@+id/ScanVIN"
+        android:backgroundTint="@color/teal_700"
         android:layout_width="180dp"
         android:layout_height="70dp"
         android:layout_marginTop="492dp"
@@ -31,12 +33,14 @@
 
         <TextView
             android:id="@+id/Barcode_Type"
+            android:textColor="@color/white"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="VIN #" />
 
         <TextView
             android:id="@+id/VIN_OUTPUT"
+            android:textColor="@color/white"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="N/A" />
@@ -45,6 +49,7 @@
 
     <Button
         android:id="@+id/record_button"
+        android:backgroundTint="@color/teal_700"
         android:layout_width="180dp"
         android:layout_height="70dp"
         android:layout_marginTop="588dp"

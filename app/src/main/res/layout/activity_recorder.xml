@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/grayDark"
     tools:context=".RecordActivity">
 
 
@@ -13,6 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="232dp"
         android:text="@string/Timer"
+        android:textColor="@color/gray"
         android:textSize="56sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -21,7 +23,7 @@
 
     <SurfaceView
         android:id="@+id/waveformView"
-        android:background="@color/white"
+        android:background="@color/grayDark"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_marginTop="20dp"
