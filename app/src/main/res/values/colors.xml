@@ -12,5 +12,5 @@
     <color name="gray">#ECECEC</color>
     <color name="grayDark">#656565</color>
     <color name="grayDarkDisabled">#8F8F8F</color>
-    <color name="colorText">#282828</color>
+    <color name="colorText">#FFFFFFFF</color>
 </resources>

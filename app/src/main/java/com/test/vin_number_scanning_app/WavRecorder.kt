@@ -20,6 +20,7 @@ import java.nio.ByteOrder
  * Kotlin Coroutine with IO dispatcher to writing input data on storage asynchronously.
  * @property filePath the path of the file to be saved.
  */
+@SuppressLint("NewApi")
 class WaveRecorder(private var filePath: String) {
 
     /**

@@ -1,23 +1,24 @@
 package com.test.vin_number_scanning_app
 
 import android.media.AudioFormat
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.RandomAccessFile
 
 internal class WaveHeaderWriter(private val filePath: String, private val waveConfig: WaveConfig) {
 
+    @RequiresApi(Build.VERSION_CODES.S)
     fun writeHeader() {
+
         val inputStream = File(filePath).inputStream()
         val totalAudioLen = inputStream.channel.size() - 44
         val totalDataLen = totalAudioLen + 36
-        val channels = if (waveConfig.channels == AudioFormat.CHANNEL_IN_MONO)
-            1
-        else
-            2
+        val channels = if (waveConfig.channels == AudioFormat.CHANNEL_IN_MONO) 1 else 2
 
         val sampleRate = waveConfig.sampleRate.toLong()
-        val byteRate =
-            (bitPerSample(waveConfig.audioEncoding) * waveConfig.sampleRate * channels / 8).toLong()
+        val byteRate = (bitPerSample(waveConfig.audioEncoding) * waveConfig.sampleRate * channels / 8).toLong()
+
         val header = getWavFileHeaderByteArray(
             totalAudioLen,
             totalDataLen,
@@ -32,7 +33,6 @@ internal class WaveHeaderWriter(private val filePath: String, private val waveCo
         randomAccessFile.write(header)
         randomAccessFile.close()
     }
-
     private fun getWavFileHeaderByteArray(
         totalAudioLen: Long, totalDataLen: Long, longSampleRate: Long,
         channels: Int, byteRate: Long, bitsPerSample: Int

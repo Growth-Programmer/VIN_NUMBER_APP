@@ -14,7 +14,7 @@
         app:cardCornerRadius="4dp"
         android:clickable="true"
         android:focusable="true"
-        android:background="@drawable/cardview_selector"
+        android:background="@color/colorOnPrimary"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

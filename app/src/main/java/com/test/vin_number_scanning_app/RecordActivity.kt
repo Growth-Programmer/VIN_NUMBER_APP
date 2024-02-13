@@ -20,11 +20,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.test.vin_number_scanning_app.databinding.ActivityRecorderBinding
 import java.io.File
+import kotlin.math.abs
 import kotlin.math.sqrt
 // Record Activity. Activity where audio is recorded and written to a wave file
 class RecordActivity : AppCompatActivity(),
     Timer.OnTimerTickListener, SurfaceHolder.Callback  { // Implements onTimerTickListener to update timer animation and text. SurfaceHolder.Callback to
-                                                         // refresh the SurfaceHolder everytime it is loaded from swiping back to RecordActivity.
+    // refresh the SurfaceHolder everytime it is loaded from swiping back to RecordActivity.
     private lateinit var binding: ActivityRecorderBinding
 
     // Member Variables
@@ -100,7 +101,7 @@ class RecordActivity : AppCompatActivity(),
                 deleteButton!!.setImageResource(R.drawable.ic_delete)
                 listOrDoneButton!!.setImageResource(R.drawable.ic_done)
 
-            // Handles if the recording is playing.
+                // Handles if the recording is playing.
             } else if (audioRecorder?.isRecording == true && audioRecorder?.isPaused == true) {
                 timer.start() // Starts timer
                 audioRecorder?.resumeRecording() // Starts recording from where it left off.
@@ -130,7 +131,7 @@ class RecordActivity : AppCompatActivity(),
                 listOrDoneButton!!.setImageResource(R.drawable.ic_list)
                 Toast.makeText(this, "Recording Saved", Toast.LENGTH_SHORT).show()
 
-            // This takes the user to the RecordingsSavedActivity.
+                // This takes the user to the RecordingsSavedActivity.
             } else {
                 val myIntent = Intent(this, SavedRecordingsActivity()::class.java)
                 startActivity(myIntent)
@@ -170,7 +171,7 @@ class RecordActivity : AppCompatActivity(),
             if (validateFileName(fileName)) {
                 startRecordingWithFileName(fileName) // Initiate recording if naming is fine.
 
-            // Return this toast text if naming is incorrect. Recording does not initiate.
+                // Return this toast text if naming is incorrect. Recording does not initiate.
             } else {
                 Toast.makeText(
                     this,
@@ -297,7 +298,7 @@ class RecordActivity : AppCompatActivity(),
         // First checks if the waveform is paused, meaning that the recording has paused.
         if (!isWaveformPaused) {
             val amplitude = processAudioData(buffer) // Method that analyzes the buffer to generate accurate amplitude measurements for the waveform
-                                                     // then stores it into the amplitude variable.
+            // then stores it into the amplitude variable.
 
             updateWaveformBuffer(amplitude) // This updates the buffer to draw a real-time waveform.
 
@@ -311,51 +312,56 @@ class RecordActivity : AppCompatActivity(),
 
     // Method that draws the waveform in real-time
     private fun drawWaveform() {
-        // Synchronizes the surface holder so that it can only be accessed by the Main UI Thread.
         synchronized(surfaceHolder) {
-            val canvas = surfaceHolder.lockCanvas() // Locks canvas for drawing
+            val canvas = surfaceHolder.lockCanvas()
             if (canvas != null) {
                 try {
                     canvas.drawColor(Color.WHITE)
-                    waveformView.setBackgroundColor(Color.TRANSPARENT) // Prevents canvas being obscured by the waveFormView
+                    waveformView.setBackgroundColor(Color.TRANSPARENT)
 
-                    // This iterates over the buffer continuously for amplitude values to apply to generating the waveform shapes. Uses the currentBufferIndex as a starting point.
+                    val midHeight = canvas.height / 2f
+                    val width = canvas.width.toFloat()
+                    val gainFactor = 5.0f  // Adjust this factor as needed for visibility
+
                     for (i in waveformBuffer.indices) {
-                        val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size // Starts from currentBufferIndex for oldest amplitudes, then circles back for newest amplitude.
+                        val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
+                        val amplitude = waveformBuffer[bufferIndex] * midHeight * gainFactor
 
-                        val x = i.toFloat() / waveformBuffer.size * canvas.width // Redraws the entire waveform every time this is called AFTER a new amplitude has been updated in the waveformBuffer.
-                        val height = waveformBuffer[bufferIndex] // Amplitude value, which is just the height of a wave or in this case, a slice in the waveform.
-                        val rect = RectF(x, canvas.height / 2 - height, x + 1, canvas.height / 2 + height) // Logic for rectangle to be drawn for waveform.
-                        canvas.drawRoundRect(rect, 2f, 2f, waveformPaint) // Draws rectangle.
+                        val x = i.toFloat() / waveformBuffer.size * width
+                        val rect = RectF(x, midHeight - amplitude, x + 1, midHeight + amplitude)
+                        canvas.drawRoundRect(rect, 2f, 2f, waveformPaint)
                     }
                 } finally {
-                    surfaceHolder.unlockCanvasAndPost(canvas) // Ensures that the drawing is posted and the canvas is unlocked for new drawings.
+                    surfaceHolder.unlockCanvasAndPost(canvas)
                 }
             }
         }
     }
 
     // Audio Signal Processing Method
-    private fun processAudioData(buffer: ByteArray): Float { // buffer is a Byte Array that contains 8bit values.
-        // Used to get the mean of the byte array to get amplitude.
-        var sum = 0.0
+    private fun processAudioData(buffer: ByteArray): Float {
+        var maxAmplitude = 0f
 
-        // Step by two since the audio is processed in 16 bit, and each index hold 8bits values (a byte)
-        for (i in buffer.indices step 2) {
+        // Process 32-bit samples. With two channels, step by 8 bytes.
+        for (i in buffer.indices step 8) {
+            // Extract one 32-bit sample (one channel)
+            val sample = ((buffer[i + 3].toInt() and 0xFF) shl 24) or
+                    ((buffer[i + 2].toInt() and 0xFF) shl 16) or
+                    ((buffer[i + 1].toInt() and 0xFF) shl 8) or
+                    (buffer[i].toInt() and 0xFF)
 
-            // Second 8 bits are shifted left and first 8 bits are placed after. This follows Little Endian byte placement.
-            val sample = ((buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF))
+            // Normalize to range -1.0 to 1.0
+            val normalizedSample = sample / 2147483648.0f
 
-            // Normalizes the sample value to a range of -1.0, and 1.0.
-            val normalizedSample = sample / 32768.0  // 16-bit values range from -32768 to 32767. We add one to normalize the range.
-            sum += normalizedSample * normalizedSample // Makes sure that the value is positive and emphasizes difference between louder and quieter values.
+            // Keep track of the max amplitude for visualization
+            val amplitude = abs(normalizedSample)
+            if (amplitude > maxAmplitude) {
+                maxAmplitude = amplitude
+            }
         }
-        // Get mean of buffer, divide it by 2 since it is 16bit values we are doing arithmetic for.
-        val mean = sum / (buffer.size / 2)
-        // Get the Root Mean Square (RMS), which is the average loudness or amplitude of the chunk of audio data.
-        return sqrt(mean).toFloat() * 32768
-    }
 
+        return maxAmplitude
+    }
     // This method updates the buffer array with new amplitudes and updates the currentBufferIndex to correctly redraw the
     // the waveform every iteration in the drawWaveform method
     private fun updateWaveformBuffer(amplitude: Float) {
@@ -438,7 +444,6 @@ class RecordActivity : AppCompatActivity(),
 
 
 }
-
 
 
 
