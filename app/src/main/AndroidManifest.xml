@@ -17,26 +17,26 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GENERAL_THEME"
+        android:theme="@style/GENERAL_THEME"
         tools:targetApi="31">
         <activity
             android:name=".SavedRecordingsActivity"
-            android:theme="@style/Theme.GENERAL_THEME"
+            android:theme="@style/GENERAL_THEME"
             android:exported="false"/>
         <activity
             android:name=".ScannerActivity"
-            android:theme="@style/Theme.GENERAL_THEME"
+            android:theme="@style/GENERAL_THEME"
             android:exported="false" />
 
         <activity
             android:name=".RecordActivity"
-            android:theme="@style/Theme.GENERAL_THEME"
+            android:theme="@style/GENERAL_THEME"
             android:exported="false" />
 
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/Theme.GENERAL_THEME"
+            android:theme="@style/GENERAL_THEME"
             android:exported="true">
 
             <intent-filter>
