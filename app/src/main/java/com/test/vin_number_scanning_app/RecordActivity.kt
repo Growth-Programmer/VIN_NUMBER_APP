@@ -341,7 +341,7 @@ class RecordActivity : AppCompatActivity(),
 
                     val midHeight = canvas.height / 2f
                     val width = canvas.width.toFloat()
-                    val gainFactor = 2.0f  // Adjust this factor as needed for visibility
+                    val gainFactor = 1.0f  // Adjust this factor as needed for visibility
 
                     for (i in waveformBuffer.indices) {
                         val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size

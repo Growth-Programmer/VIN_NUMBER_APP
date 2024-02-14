@@ -54,6 +54,14 @@
                     android:visibility="gone" />
 
                 <ImageButton
+                    android:id="@+id/btnEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_attached_mail"
+                    android:visibility="gone" />
+
+
+                <ImageButton
                     android:id="@+id/btnDeleteRecording"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

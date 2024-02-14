@@ -19,6 +19,7 @@ class RecordingsAdapter(
     val recordingBarcodes: MutableList<String>,     // List of associated barcodes for each recording.
     private val onPlayClicked: (File, ViewHolder) -> Unit,   // Callback when play button is clicked.
     private val onRestartClicked: (File, ViewHolder) -> Unit,// Callback when restart button is clicked.
+    private val onSendEmail: (File, ViewHolder) -> Unit,
     private val onDeleteClicked: (Int) -> Unit              // Callback when delete button is clicked.
 ) : RecyclerView.Adapter<RecordingsAdapter.ViewHolder>() {
 
@@ -50,6 +51,7 @@ class RecordingsAdapter(
         holder.tvRecordingDuration.visibility = View.VISIBLE
         holder.btnPlayPause.visibility = if (isSelected) View.VISIBLE else View.GONE
         holder.btnRestart.visibility = if (isSelected) View.VISIBLE else View.GONE
+        holder.btnEmail.visibility = if (isSelected) View.VISIBLE else View.GONE
         holder.btnDeleteRecording.visibility = if (isSelected) View.VISIBLE else View.GONE
         holder.progressBar.visibility = if (isSelected) View.VISIBLE else View.GONE
         holder.cardView.isSelected = isSelected
@@ -64,6 +66,7 @@ class RecordingsAdapter(
 
         holder.btnPlayPause.setOnClickListener { onPlayClicked(recording, holder) }
         holder.btnRestart.setOnClickListener { onRestartClicked(recording, holder) }
+        holder.btnEmail.setOnClickListener{ onSendEmail(recording, holder) }
         holder.btnDeleteRecording.setOnClickListener { onDeleteClicked(position) }
     }
 
@@ -73,14 +76,17 @@ class RecordingsAdapter(
 
     // ViewHolder class provides a reference to the views for each data item.
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvRecordingName: TextView = itemView.findViewById(R.id.tvRecordingName)
         val tvRecordingDate: TextView = itemView.findViewById(R.id.tvRecordingDate)
         val tvRecordingDuration: TextView = itemView.findViewById(R.id.tvRecordingDuration)
         val tvRecordingBarcodes: TextView = itemView.findViewById(R.id.tvRecordingBarcodes)
+
         val progressBar: ProgressBar = itemView.findViewById(R.id.progressBar)
-        val tvRecordingName: TextView = itemView.findViewById(R.id.tvRecordingName)
         val cardView: CardView = itemView.findViewById(R.id.cardViewId)
+
         val btnPlayPause: ImageButton = itemView.findViewById(R.id.btnPlayPause)
         val btnRestart: ImageButton = itemView.findViewById(R.id.btnRestart)
+        val btnEmail: ImageButton = itemView.findViewById(R.id.btnEmail)
         val btnDeleteRecording: ImageButton = itemView.findViewById(R.id.btnDeleteRecording)
         var progressAnimator: ObjectAnimator? = null
 

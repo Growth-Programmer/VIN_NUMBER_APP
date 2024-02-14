@@ -56,7 +56,9 @@ class SavedRecordingsActivity : AppCompatActivity() {
             mutableListOf(),
             this::playRecording,
             this::restartRecording,
-            this::deleteRecording
+            this::sendEmail,
+            this::deleteRecording,
+
         )
         recyclerView.adapter = recordingsAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -82,6 +84,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
     private fun playRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         if (currentPlayingPosition != holder.bindingAdapterPosition) {
             resetCurrentPlayback()
+
             currentPlayingPosition = holder.bindingAdapterPosition
             currentPlayingHolder = holder
 
@@ -189,6 +192,9 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun sendEmail(file: File, holder: RecordingsAdapter.ViewHolder){
+
+    }
 
 
     // Used to reset or clear any UI or resources that remain after deleting from storage.
