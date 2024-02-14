@@ -5,9 +5,19 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.flow.Flow
+import androidx.lifecycle.lifecycleScope
+import com.test.vin_number_scanning_app.RecordActivity.Companion.vinsAndRecordingsDataStore
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,6 +26,7 @@ import java.util.concurrent.TimeUnit
 
 
 class SavedRecordingsActivity : AppCompatActivity() {
+
 
     private val handler = Handler(Looper.getMainLooper()) // Handler to get main thread.
 
@@ -61,8 +72,10 @@ class SavedRecordingsActivity : AppCompatActivity() {
             }
         }
 
-        // Load Recordings
-        loadRecordings()
+        lifecycleScope.launch {
+            // Load Recordings
+            loadRecordings()
+        }
     }
 
     // Handles playback of a recording.
@@ -92,7 +105,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
 
     // Load data from recordings
-    private fun loadRecordings() {
+    private suspend fun loadRecordings() {
         val internalStorageDir = filesDir
         val filesList = internalStorageDir.walk()
             .filter { it.isFile && it.extension.equals("wav", ignoreCase = true) }
@@ -144,7 +157,15 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
 
         val fileToDelete = recordingsAdapter.recordings[position]
+        val keyToDelete = stringPreferencesKey(fileToDelete.name)
+
         if (fileToDelete.exists()) {
+            lifecycleScope.launch {
+                vinsAndRecordingsDataStore.edit { preferences ->
+                    preferences.remove(keyToDelete)
+                Log.d("File", "$keyToDelete was deleted.")
+                }
+            }
             fileToDelete.delete()
         }
 
@@ -223,9 +244,13 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
     // Retrieves the associated barcode for a recording from SharedPreferences.
-    private fun getBarcodeForRecording(recordingIdentifier: String): String? {
-        val sharedPreferences = getSharedPreferences("MySharedPrefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("Barcode_$recordingIdentifier", null)
+    private suspend fun getBarcodeForRecording(recordingIdentifier: String): String? {
+        val fileNameKey = stringPreferencesKey(recordingIdentifier)
+        return vinsAndRecordingsDataStore.data
+            .map{ preferences ->
+                preferences[fileNameKey]
+            }
+            .firstOrNull()
     }
 
 

@@ -33,6 +33,8 @@ internal class WaveHeaderWriter(private val filePath: String, private val waveCo
         randomAccessFile.write(header)
         randomAccessFile.close()
     }
+
+    // Wave File Header Writer
     private fun getWavFileHeaderByteArray(
         totalAudioLen: Long, totalDataLen: Long, longSampleRate: Long,
         channels: Int, byteRate: Long, bitsPerSample: Int

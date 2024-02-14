@@ -18,7 +18,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.lifecycleScope
 import com.test.vin_number_scanning_app.databinding.ActivityRecorderBinding
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -26,20 +35,26 @@ import kotlin.math.sqrt
 class RecordActivity : AppCompatActivity(),
     Timer.OnTimerTickListener, SurfaceHolder.Callback  { // Implements onTimerTickListener to update timer animation and text. SurfaceHolder.Callback to
     // refresh the SurfaceHolder everytime it is loaded from swiping back to RecordActivity.
-    private lateinit var binding: ActivityRecorderBinding
 
     // Member Variables
     private var audioRecorder: WaveRecorder? = null // The object that will record raw audio data and stream it to a wave file.
     private var recordButton: ImageButton? = null // Button that initiates recording.
     private var listOrDoneButton: ImageButton? = null // Button that goes to the SavedRecordingsActivity, or stores a wave file depending on the case.
     private var deleteButton: ImageButton? = null // Deletes the file that is currently being streamed audio data.
-
+    private var isWaveformPaused = false // Pauses waveform if recording is paused.
     private var lastRecordedFilePath: String? = null // Stores the file path of the most recent stored recording.
     private var currentBufferIndex = 0 // Index for the current position in the waveform buffer.
+
     private val waveformPaint = Paint() // Waveform color
     private val waveformBuffer = FloatArray(720) // Size of waveform buffer, it can hold up 720 amplitude values.
-    private var isWaveformPaused = false // Pauses waveform if recording is paused.
 
+    companion object {
+        val Context.vinsAndRecordingsDataStore: DataStore<Preferences> by preferencesDataStore(
+            name = "vinsAndRecordings"
+        )
+    }
+
+    private lateinit var binding: ActivityRecorderBinding
     private lateinit var waveformView: SurfaceView //Surface-view that will display the waveform.
     private lateinit var surfaceHolder: SurfaceHolder // Holds the Surface-view.
     private lateinit var screenTimer: TextView // Timer text.
@@ -60,6 +75,7 @@ class RecordActivity : AppCompatActivity(),
         waveformView = findViewById(R.id.waveformView)
         surfaceHolder = waveformView.holder
         waveformView.holder.addCallback(this)
+        waveformView.setBackgroundColor(Color.TRANSPARENT)
 
         // Waveform art configuration.
         waveformPaint.color = Color.parseColor("#00CED1")
@@ -127,7 +143,9 @@ class RecordActivity : AppCompatActivity(),
 
             // This case saves the recording to internal storage.
             if (audioRecorder?.isRecording == true) {
-                stopRecording()
+                lifecycleScope.launch {
+                    stopRecording()
+                }
                 listOrDoneButton!!.setImageResource(R.drawable.ic_list)
                 Toast.makeText(this, "Recording Saved", Toast.LENGTH_SHORT).show()
 
@@ -141,7 +159,10 @@ class RecordActivity : AppCompatActivity(),
         // Deletes the current recording run and deletes the file from internal storage that was currently being written to.
         deleteButton!!.setOnClickListener {
             if (audioRecorder?.isRecording == true && audioRecorder?.isPaused == true) {
-                stopRecording()
+
+                lifecycleScope.launch {
+                    stopRecording()
+                }
                 deleteRecordingFile()
 
                 // Changes ListOrDoneButton to the list image since there is no audio data being taken at the moment.
@@ -230,7 +251,7 @@ class RecordActivity : AppCompatActivity(),
 
     // Method that stops the recording and saves it to internal storage.
     @SuppressLint("SetTextI18n")
-    private fun stopRecording() {
+    private suspend fun stopRecording() {
 
         // Sets the last recorded file path to the output file path of the audio recorder object.
         lastRecordedFilePath = audioRecorder?.getOutputFilePath()
@@ -317,11 +338,10 @@ class RecordActivity : AppCompatActivity(),
             if (canvas != null) {
                 try {
                     canvas.drawColor(Color.DKGRAY)
-                    waveformView.setBackgroundColor(Color.TRANSPARENT)
 
                     val midHeight = canvas.height / 2f
                     val width = canvas.width.toFloat()
-                    val gainFactor = 5.0f  // Adjust this factor as needed for visibility
+                    val gainFactor = 2.0f  // Adjust this factor as needed for visibility
 
                     for (i in waveformBuffer.indices) {
                         val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
@@ -407,7 +427,12 @@ class RecordActivity : AppCompatActivity(),
 
     // Callbacks to detect any changes to the surface-view if it was not caused by the code in this class.
     override fun surfaceCreated(holder: SurfaceHolder) {
-      // Do nothing
+        val canvas = surfaceHolder.lockCanvas()
+        if (canvas != null) {
+            canvas.drawColor(Color.DKGRAY)
+            waveformView.setBackgroundColor(Color.TRANSPARENT)
+            surfaceHolder.unlockCanvasAndPost(canvas)
+        }
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -415,16 +440,13 @@ class RecordActivity : AppCompatActivity(),
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        synchronized(surfaceHolder) {
-            clearWaveformBuffer()
-            currentBufferIndex = 0
-        }
+        // Do Nothing
 
     }
     /* <-------------------------------------------------------------------------------------------- BARCODE STRING DATA RETRIEVAL ----------------------------------------------------------------------------------------------------------> */
 
     // Gets the last scanned barcode that was passed to it from Main Activity through "GetStringExtra".
-    private fun onRecordingCompleted(recordingFile: File) {
+    private suspend fun onRecordingCompleted(recordingFile: File) {
 
         val barcode = intent.getStringExtra("LastScannedBarcode")
         barcode?.let {
@@ -434,14 +456,14 @@ class RecordActivity : AppCompatActivity(),
     }
 
     // Persistently saves the barcode with its specific recording using the storage "SharedPreferences".
-    private fun saveScannedBarcode(recordingIdentifier: String, barcode: String) {
-        val sharedPreferences = getSharedPreferences("MySharedPrefs", Context.MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            putString("Barcode_$recordingIdentifier", barcode)
-            apply()
-        }
-    }
+    private suspend fun saveScannedBarcode(recordingIdentifier: String, barcode: String) {
+        val fileNameKey = stringPreferencesKey(recordingIdentifier)
 
+        vinsAndRecordingsDataStore.edit { preferences ->
+            preferences[fileNameKey] = barcode
+        }
+
+    }
 
 }
 
