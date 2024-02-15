@@ -19,7 +19,7 @@ class RecordingsAdapter(
     val recordingBarcodes: MutableList<String>,     // List of associated barcodes for each recording.
     private val onPlayClicked: (File, ViewHolder) -> Unit,   // Callback when play button is clicked.
     private val onRestartClicked: (File, ViewHolder) -> Unit,// Callback when restart button is clicked.
-    private val onSendEmail: (File, ViewHolder) -> Unit,
+    private val onSendEmail: (Int) -> Unit,
     private val onDeleteClicked: (Int) -> Unit              // Callback when delete button is clicked.
 ) : RecyclerView.Adapter<RecordingsAdapter.ViewHolder>() {
 
@@ -66,7 +66,7 @@ class RecordingsAdapter(
 
         holder.btnPlayPause.setOnClickListener { onPlayClicked(recording, holder) }
         holder.btnRestart.setOnClickListener { onRestartClicked(recording, holder) }
-        holder.btnEmail.setOnClickListener{ onSendEmail(recording, holder) }
+        holder.btnEmail.setOnClickListener{ onSendEmail(position) }
         holder.btnDeleteRecording.setOnClickListener { onDeleteClicked(position) }
     }
 

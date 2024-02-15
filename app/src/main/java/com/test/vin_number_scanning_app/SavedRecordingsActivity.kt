@@ -1,11 +1,17 @@
 package com.test.vin_number_scanning_app
 
+import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -192,8 +198,42 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun sendEmail(file: File, holder: RecordingsAdapter.ViewHolder){
+    private fun sendEmail(position: Int){
 
+
+
+        val fileToEmail = recordingsAdapter.recordings[position]
+        val emailDialog =  Dialog(this)
+        emailDialog.setTitle("Email Wave File")
+        emailDialog.setContentView(R.layout.email_dialog)
+
+        val emailIntent = Intent(Intent.ACTION_SEND)
+
+        val emailBinding : EditText = emailDialog.findViewById(R.id.edit_email)
+        val subjectBinding : EditText = emailDialog.findViewById(R.id.edit_subject)
+        val messageBinding : EditText = emailDialog.findViewById(R.id.edit_message_text)
+        val attachmentBinding : TextView = emailDialog.findViewById((R.id.attachment))
+        val sendButton : Button = emailDialog.findViewById(R.id.confirmSend)
+
+        val emailString = emailBinding.text.toString()
+        val emailRecipients = emailString.split(",").map{it.trim()}
+        val subject = subjectBinding.text.toString()
+        val message = messageBinding.text.toString()
+
+        attachmentBinding.text = fileToEmail.name.toString()
+
+
+        emailDialog.show()
+
+        sendButton.setOnClickListener{
+            emailIntent.type = "plain/text"
+            emailIntent.putExtra(Intent.EXTRA_EMAIL, emailRecipients.toTypedArray())
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject)
+            emailIntent.putExtra(Intent.EXTRA_TEXT, message)
+
+            intent.setType("message/rfc822")
+
+        }
     }
 
 
