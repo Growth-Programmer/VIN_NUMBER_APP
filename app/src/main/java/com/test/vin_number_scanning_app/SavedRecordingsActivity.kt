@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -76,7 +78,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
                     val progress = it.currentPosition
                     currentPlayingHolder?.progressBar?.progress = progress
                 }
-                handler.postDelayed(progressRunnable, 1000)
+                handler.postDelayed(progressRunnable, 100)
             }
         }
 
@@ -87,6 +89,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
     // Handles playback of a recording.
+// Handles playback of a recording.
     private fun playRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         if (currentPlayingPosition != holder.bindingAdapterPosition) {
             resetCurrentPlayback()
@@ -94,23 +97,24 @@ class SavedRecordingsActivity : AppCompatActivity() {
             currentPlayingPosition = holder.bindingAdapterPosition
             currentPlayingHolder = holder
 
-            // Mapping of each file to its recording data.
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(file.absolutePath)
                 setOnPreparedListener { mp ->
                     mp.start()
                     holder.progressBar.max = mp.duration
                     holder.progressBar.progress = 0
-                    holder.startProgressAnimation(mp.duration)
-                    startUpdatingProgressBar()
+                    startUpdatingProgressBar(mp) // Start updating progress bar with MediaPlayer reference
                 }
                 setOnCompletionListener {
+                    stopUpdatingProgressBar() // Stop progress bar update on completion
                     holder.progressBar.progress = holder.progressBar.max
                 }
                 prepareAsync()
             }
         }
     }
+
+
 
 
     // Load data from recordings
@@ -134,31 +138,29 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
     // Restarts the playback
+// Restarts the playback
     private fun restartRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
-        // Reset current playback
-        mediaPlayer?.apply {
-            if (isPlaying) {
-                stop()
-            }
-            reset()
-            release()
-        }
-        mediaPlayer = null
+        resetCurrentPlayback()
 
-        // Reset the progress bar and start the animation from the beginning
-        holder.progressBar.progress = 0
-        holder.startProgressAnimation(holder.progressBar.max) // Assuming max is already set
+        currentPlayingPosition = holder.bindingAdapterPosition
+        currentPlayingHolder = holder
 
-        // Set up and start the MediaPlayer for the selected recording
         mediaPlayer = MediaPlayer().apply {
             setDataSource(file.absolutePath)
             setOnPreparedListener { mp ->
                 mp.start()
-                startUpdatingProgressBar() // Begin updating the progress bar
+                holder.progressBar.max = mp.duration
+                holder.progressBar.progress = 0
+                startUpdatingProgressBar(mp) // Start updating the progress bar
+            }
+            setOnCompletionListener {
+                stopUpdatingProgressBar() // Stop progress bar update on completion
+                holder.progressBar.progress = holder.progressBar.max
             }
             prepareAsync()
         }
     }
+
     // Delete the recording and its associated data from storage.
     private fun deleteRecording(position: Int) {
         if (position < 0 || position >= recordingsAdapter.recordings.size) {
@@ -200,14 +202,10 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
     private fun sendEmail(position: Int){
 
-
-
         val fileToEmail = recordingsAdapter.recordings[position]
         val emailDialog =  Dialog(this)
-        emailDialog.setTitle("Email Wave File")
-        emailDialog.setContentView(R.layout.email_dialog)
 
-        val emailIntent = Intent(Intent.ACTION_SEND)
+        emailDialog.setContentView(R.layout.email_dialog)
 
         val emailBinding : EditText = emailDialog.findViewById(R.id.edit_email)
         val subjectBinding : EditText = emailDialog.findViewById(R.id.edit_subject)
@@ -215,31 +213,38 @@ class SavedRecordingsActivity : AppCompatActivity() {
         val attachmentBinding : TextView = emailDialog.findViewById((R.id.attachment))
         val sendButton : Button = emailDialog.findViewById(R.id.confirmSend)
 
-        val emailString = emailBinding.text.toString()
-        val emailRecipients = emailString.split(",").map{it.trim()}
-        val subject = subjectBinding.text.toString()
-        val message = messageBinding.text.toString()
-
         attachmentBinding.text = fileToEmail.name.toString()
-
 
         emailDialog.show()
 
         sendButton.setOnClickListener{
-            emailIntent.type = "plain/text"
+            val emailString = emailBinding.text.toString()
+            val subject = subjectBinding.text.toString()
+            val message = messageBinding.text.toString()
+
+            val waveFileUri = FileProvider.getUriForFile(this, "com.test.vin_number_scanning_app.provider", fileToEmail)
+            val emailRecipients = emailString.split(",").map{it.trim()}
+
+
+            val emailIntent = Intent(Intent.ACTION_SEND)
+            emailIntent.type = "text/plain"
             emailIntent.putExtra(Intent.EXTRA_EMAIL, emailRecipients.toTypedArray())
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject)
             emailIntent.putExtra(Intent.EXTRA_TEXT, message)
+            emailIntent.putExtra(Intent.EXTRA_STREAM, waveFileUri)
+            emailIntent.setType("message/rfc822")
 
-            intent.setType("message/rfc822")
+            startActivity(Intent.createChooser(emailIntent, "Choose an email client"))
 
         }
     }
 
 
     // Used to reset or clear any UI or resources that remain after deleting from storage.
+// Used to reset or clear any UI or resources that remain after stopping playback.
     private fun resetCurrentPlayback() {
         mediaPlayer?.apply {
+            stopUpdatingProgressBar() // Stop progress bar updates first
             if (isPlaying) {
                 stop()
             }
@@ -247,23 +252,35 @@ class SavedRecordingsActivity : AppCompatActivity() {
             release()
         }
         mediaPlayer = null
-        handler.removeCallbacks(progressRunnable)
-        currentPlayingHolder?.resetProgressAnimation()
+        currentPlayingHolder?.progressBar?.progress = 0 // Reset progress bar
+        currentPlayingHolder = null
         currentPlayingPosition = RecyclerView.NO_POSITION
-
     }
 
-    // Updates progress bar
-    private fun startUpdatingProgressBar() {
+
+    // Starts updating the progress bar based on the MediaPlayer's progress
+// Starts updating the progress bar based on the MediaPlayer's progress
+    private fun startUpdatingProgressBar(mediaPlayer: MediaPlayer) {
+        val totalDuration = mediaPlayer.duration
+        val updateInterval = (totalDuration / 1000).coerceAtLeast(50) // Coerce the value to be at least 50 milliseconds
+
+        handler.removeCallbacks(progressRunnable) // Remove any existing callbacks
+        progressRunnable = object : Runnable {
+            override fun run() {
+                if (mediaPlayer.isPlaying && currentPlayingHolder != null) {
+                    val progress = mediaPlayer.currentPosition
+                    currentPlayingHolder?.progressBar?.progress = progress
+                    handler.postDelayed(this, updateInterval.toLong())
+                }
+            }
+        }
         handler.post(progressRunnable)
     }
 
-    // Resets Current Player
-    override fun onStop() {
-        super.onStop()
+    private fun stopUpdatingProgressBar() {
         handler.removeCallbacks(progressRunnable)
-        resetCurrentPlayback()
     }
+
 
     // Retrieves the duration of an audio file.
     private fun getAudioFileDuration(file: File): String {
