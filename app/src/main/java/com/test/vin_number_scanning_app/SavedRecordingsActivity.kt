@@ -89,7 +89,6 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
     // Handles playback of a recording.
-// Handles playback of a recording.
     private fun playRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         if (currentPlayingPosition != holder.bindingAdapterPosition) {
             resetCurrentPlayback()
@@ -114,9 +113,6 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
-
-
-
     // Load data from recordings
     private suspend fun loadRecordings() {
         val internalStorageDir = filesDir
@@ -138,7 +134,6 @@ class SavedRecordingsActivity : AppCompatActivity() {
     }
 
     // Restarts the playback
-// Restarts the playback
     private fun restartRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
         resetCurrentPlayback()
 
@@ -200,6 +195,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
+    // Sends the email with the .wav file attached
     private fun sendEmail(position: Int){
 
         val fileToEmail = recordingsAdapter.recordings[position]
@@ -241,7 +237,6 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
 
     // Used to reset or clear any UI or resources that remain after deleting from storage.
-// Used to reset or clear any UI or resources that remain after stopping playback.
     private fun resetCurrentPlayback() {
         mediaPlayer?.apply {
             stopUpdatingProgressBar() // Stop progress bar updates first
@@ -259,10 +254,9 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
 
     // Starts updating the progress bar based on the MediaPlayer's progress
-// Starts updating the progress bar based on the MediaPlayer's progress
     private fun startUpdatingProgressBar(mediaPlayer: MediaPlayer) {
         val totalDuration = mediaPlayer.duration
-        val updateInterval = (totalDuration / 1000).coerceAtLeast(50) // Coerce the value to be at least 50 milliseconds
+        val updateInterval = (totalDuration / 100).coerceAtMost(100) // Coerce the value to be at least 100 milliseconds
 
         handler.removeCallbacks(progressRunnable) // Remove any existing callbacks
         progressRunnable = object : Runnable {
@@ -280,7 +274,6 @@ class SavedRecordingsActivity : AppCompatActivity() {
     private fun stopUpdatingProgressBar() {
         handler.removeCallbacks(progressRunnable)
     }
-
 
     // Retrieves the duration of an audio file.
     private fun getAudioFileDuration(file: File): String {
@@ -315,7 +308,5 @@ class SavedRecordingsActivity : AppCompatActivity() {
             }
             .firstOrNull()
     }
-
-
 }
 
