@@ -76,7 +76,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
                 handler.postDelayed(progressRunnable, 100)
             }
         }
-
+        // Coroutine
         lifecycleScope.launch {
             // Load Recordings
             loadRecordings()
@@ -108,7 +108,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
-    // Load data from recordings
+    // Load data from recordings synchronously
     private suspend fun loadRecordings() {
         val internalStorageDir = filesDir
         val filesList = internalStorageDir.walk()
@@ -161,6 +161,7 @@ class SavedRecordingsActivity : AppCompatActivity() {
         val keyToDelete = stringPreferencesKey(fileToDelete.name)
 
         if (fileToDelete.exists()) {
+            // Coroutine
             lifecycleScope.launch {
                 vinsAndRecordingsDataStore.edit { preferences ->
                     preferences.remove(keyToDelete)
