@@ -85,9 +85,11 @@ class SavedRecordingsActivity : AppCompatActivity() {
 
     // Handles playback of a recording.
     private fun playRecording(file: File, holder: RecordingsAdapter.ViewHolder) {
-        if (currentPlayingPosition != holder.bindingAdapterPosition) {
+        if (currentPlayingPosition == holder.bindingAdapterPosition) {
+            pausePlayback(holder) // Pause if the same recording is clicked again
+        } else {
             resetCurrentPlayback()
-
+            holder.btnPlayPause.setImageResource(R.drawable.ic_savedrecordings_pause)
             currentPlayingPosition = holder.bindingAdapterPosition
             currentPlayingHolder = holder
 
@@ -97,16 +99,18 @@ class SavedRecordingsActivity : AppCompatActivity() {
                     mp.start()
                     holder.progressBar.max = mp.duration
                     holder.progressBar.progress = 0
-                    startUpdatingProgressBar(mp) // Start updating progress bar with MediaPlayer reference
+                    startUpdatingProgressBar(mp)
                 }
                 setOnCompletionListener {
-                    stopUpdatingProgressBar() // Stop progress bar update on completion
+                    stopUpdatingProgressBar()
                     holder.progressBar.progress = holder.progressBar.max
+                    resetCurrentPlayback() // Reset playback after completion
                 }
                 prepareAsync()
             }
         }
     }
+
 
     // Load data from recordings synchronously
     private suspend fun loadRecordings() {
@@ -135,7 +139,9 @@ class SavedRecordingsActivity : AppCompatActivity() {
         currentPlayingPosition = holder.bindingAdapterPosition
         currentPlayingHolder = holder
 
+
         mediaPlayer = MediaPlayer().apply {
+            holder.btnPlayPause.setImageResource(R.drawable.ic_savedrecordings_pause)
             setDataSource(file.absolutePath)
             setOnPreparedListener { mp ->
                 mp.start()
@@ -231,10 +237,26 @@ class SavedRecordingsActivity : AppCompatActivity() {
         }
     }
 
+    // Pauses the current playback.
+    private fun pausePlayback(holder: RecordingsAdapter.ViewHolder) {
+        mediaPlayer?.let { mp ->
+            if (mp.isPlaying) {
+                mp.pause()
+                holder.btnPlayPause.setImageResource(R.drawable.ic_play) // Set to play icon
+                stopUpdatingProgressBar()
+            } else {
+                mp.start()
+                holder.btnPlayPause.setImageResource(R.drawable.ic_savedrecordings_pause) // Set to pause icon
+                startUpdatingProgressBar(mp)
+            }
+        }
+    }
+
 
     // Used to reset or clear any UI or resources that remain after deleting from storage.
     private fun resetCurrentPlayback() {
         mediaPlayer?.apply {
+
             stopUpdatingProgressBar() // Stop progress bar updates first
             if (isPlaying) {
                 stop()
