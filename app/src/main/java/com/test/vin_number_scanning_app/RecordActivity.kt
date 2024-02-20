@@ -25,12 +25,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
 import com.test.vin_number_scanning_app.databinding.ActivityRecorderBinding
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
-import kotlin.math.sqrt
+
 // Record Activity. Activity where audio is recorded and written to a wave file
 class RecordActivity : AppCompatActivity(),
     Timer.OnTimerTickListener, SurfaceHolder.Callback  { // Implements onTimerTickListener to update timer animation and text. SurfaceHolder.Callback to
@@ -121,7 +119,7 @@ class RecordActivity : AppCompatActivity(),
             } else if (audioRecorder?.isRecording == true && audioRecorder?.isPaused == true) {
                 timer.start() // Starts timer
                 audioRecorder?.resumeRecording() // Starts recording from where it left off.
-                recordButton!!.setImageResource(R.drawable.ic_pause) // Changes image from microphone to pause.
+                recordButton!!.setImageResource(R.drawable.ic_recordingactivity_pause) // Changes image from microphone to pause.
                 isWaveformPaused = false
 
                 // Buttons are Disabled since the recording cannot be saved or deleted at this point.
@@ -232,7 +230,7 @@ class RecordActivity : AppCompatActivity(),
         }
 
         // Images changes to a pause button, meaning the recorder is currently recording.
-        recordButton!!.setImageResource(R.drawable.ic_pause)
+        recordButton!!.setImageResource(R.drawable.ic_recordingactivity_pause)
 
         // Change button image to the disabled done icon.
         listOrDoneButton!!.setImageResource(R.drawable.ic_done_disabled)
@@ -341,7 +339,7 @@ class RecordActivity : AppCompatActivity(),
 
                     val midHeight = canvas.height / 2f
                     val width = canvas.width.toFloat()
-                    val gainFactor = 1.0f  // Adjust this factor as needed for visibility
+                    val gainFactor = 0.95f  // Adjust this factor as needed for visibility. Adjust the max height of the waveform ranging from 0.0 to 1.0.
 
                     for (i in waveformBuffer.indices) {
                         val bufferIndex = (currentBufferIndex + i) % waveformBuffer.size
@@ -364,6 +362,7 @@ class RecordActivity : AppCompatActivity(),
 
         // Process 32-bit samples. With two channels, step by 8 bytes.
         for (i in buffer.indices step 8) {
+
             // Extract one 32-bit sample (one channel)
             val sample = ((buffer[i + 3].toInt() and 0xFF) shl 24) or
                     ((buffer[i + 2].toInt() and 0xFF) shl 16) or
@@ -371,7 +370,7 @@ class RecordActivity : AppCompatActivity(),
                     (buffer[i].toInt() and 0xFF)
 
             // Normalize to range -1.0 to 1.0
-            val normalizedSample = sample / 2147483648.0f
+            val normalizedSample = sample / 2.14748365E9f
 
             // Keep track of the max amplitude for visualization
             val amplitude = abs(normalizedSample)

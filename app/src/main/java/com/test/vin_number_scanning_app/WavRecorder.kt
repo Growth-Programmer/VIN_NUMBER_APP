@@ -6,6 +6,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.audiofx.NoiseSuppressor
 import android.util.Log
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -69,6 +70,7 @@ class WaveRecorder(private var filePath: String) {
     /**
      * Starts audio recording asynchronously and writes recorded data chunks on storage.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("MissingPermission")
     fun startRecording() {
 
@@ -161,12 +163,13 @@ class WaveRecorder(private var filePath: String) {
     /** Changes @property filePath to @param newFilePath
      * Calling this method while still recording throws an IllegalStateException
      */
-    fun changeFilePath(newFilePath: String) {
+
+   /* fun changeFilePath(newFilePath: String) {
         if (isRecording)
             throw IllegalStateException("Cannot change filePath when still recording.")
         else
             filePath = newFilePath
-    }
+    } */
 
     /**
      * Stops audio recorder and release resources then writes recorded file headers.

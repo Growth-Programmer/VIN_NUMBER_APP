@@ -17,10 +17,10 @@ inline fun Context.cameraPermissionRequest(crossinline positive: () -> Unit){
     AlertDialog.Builder(this)
         .setTitle("Camera Permission Required")
         .setMessage("Without accessing the camera, it is not possible to scan VIN Numbers...")
-        .setPositiveButton("Allow Camera") { dialog, which ->
+        .setPositiveButton("Allow Camera") { _, _ ->
             positive.invoke()
         }
-        .setNegativeButton("Cancel") {dialog, which ->
+        .setNegativeButton("Cancel") { _, _ ->
         }
         .show()
 }
@@ -29,10 +29,10 @@ inline fun Context.microphonePermissionRequest(crossinline positive: () -> Unit)
     AlertDialog.Builder(this)
         .setTitle("Audio Permission Required")
         .setMessage("Without accessing the microphone, it is not possible to record audio")
-        .setPositiveButton("Allow Microphone") { dialog, which ->
+        .setPositiveButton("Allow Microphone") { _, _ ->
             positive.invoke()
         }
-        .setNegativeButton("Cancel") {dialog, which ->
+        .setNegativeButton("Cancel") { _, _ ->
         }
         .show()
 }

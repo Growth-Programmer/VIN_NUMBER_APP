@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(myIntent)
     }
 
-    // Starts ScannerActivity and sets the binded xml text value to whatever alphanumeric barcode was scanned, and stores it to lastScannedBarcode.
+    // Starts ScannerActivity and binds the xml text value to whatever alphanumeric barcode value was scanned, and stores it to lastScannedBarcode.
     private fun startScannerActivity() {
         ScannerActivity.startScanner(this) { barcode ->
             binding.VINOUTPUT.text = barcode

@@ -76,6 +76,7 @@ class RecordingsAdapter(
 
     // ViewHolder class provides a reference to the views for each data item.
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private var progressAnimator: ObjectAnimator? = null
         val tvRecordingName: TextView = itemView.findViewById(R.id.tvRecordingName)
         val tvRecordingDate: TextView = itemView.findViewById(R.id.tvRecordingDate)
         val tvRecordingDuration: TextView = itemView.findViewById(R.id.tvRecordingDuration)
@@ -88,16 +89,8 @@ class RecordingsAdapter(
         val btnRestart: ImageButton = itemView.findViewById(R.id.btnRestart)
         val btnEmail: ImageButton = itemView.findViewById(R.id.btnEmail)
         val btnDeleteRecording: ImageButton = itemView.findViewById(R.id.btnDeleteRecording)
-        var progressAnimator: ObjectAnimator? = null
 
-        // Starts the animation for the progress bar.
-        fun startProgressAnimation(max: Int) {
-            progressBar.max = max
-            progressBar.progress = 0
-            progressAnimator = ObjectAnimator.ofInt(progressBar, "progress", 0, max)
-            progressAnimator?.duration = max.toLong()
-            progressAnimator?.start()
-        }
+
 
         // Resets the progress bar animation.
         fun resetProgressAnimation() {
@@ -147,13 +140,13 @@ class RecordingsAdapter(
                 recordings.add(recordingData.file)
                 recordingDates.add(recordingData.date)
                 recordingDurations.add(recordingData.duration)
-                recordingBarcodes.add(recordingData.barcode ?: "No Barcode")
+                recordingBarcodes.add(recordingData.barcode)
                 notifyItemInserted(recordings.size - 1)
             } else {
                 // Update existing item
                 recordingDates[existingIndex] = recordingData.date
                 recordingDurations[existingIndex] = recordingData.duration
-                recordingBarcodes[existingIndex] = recordingData.barcode ?: "No Barcode"
+                recordingBarcodes[existingIndex] = recordingData.barcode
                 if (existingIndex != newIndex) {
                     // If item has moved, adjust the list
                     val movedRecording = recordings.removeAt(existingIndex)
