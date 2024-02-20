@@ -169,7 +169,7 @@ class WaveRecorder(private var filePath: String) {
             throw IllegalStateException("Cannot change filePath when still recording.")
         else
             filePath = newFilePath
-    } */
+   } */
 
     /**
      * Stops audio recorder and release resources then writes recorded file headers.
